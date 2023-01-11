@@ -13,6 +13,7 @@ import org.springframework.stereotype.Repository;
 import java.sql.ResultSet;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
@@ -23,24 +24,29 @@ public class MemberRepository {
   final private NamedParameterJdbcTemplate jdbcTemplate;
   final private String TABLE = "member";
 
+  final private static RowMapper<Member> ROW_MAPPER = (ResultSet rst, int rowNum) -> Member.builder()
+    .id(rst.getLong("id"))
+    .email(rst.getString("email"))
+    .nickname(rst.getString("nickname"))
+    .birthday(rst.getObject("birthday", LocalDate.class))
+    .createdAt(rst.getObject("createdAt", LocalDateTime.class))
+    .build();
+
   public Optional<Member> findById(Long id) {
 
     var sql = String.format("SELECT * FROM %s WHERE id =:id", TABLE);
     var param = new MapSqlParameterSource()
       .addValue("id", id);
-    RowMapper<Member> rowMapper = getMemberRowMapper();
-    return Optional.ofNullable(jdbcTemplate.queryForObject(sql, param, rowMapper));
+    return Optional.ofNullable(jdbcTemplate.queryForObject(sql, param, ROW_MAPPER));
   }
 
-  private static RowMapper<Member> getMemberRowMapper() {
-    RowMapper<Member> rowMapper = (ResultSet rst, int rowNum) -> Member.builder()
-      .id(rst.getLong("id"))
-      .email(rst.getString("email"))
-      .nickname(rst.getString("nickname"))
-      .birthday(rst.getObject("birthday", LocalDate.class))
-      .createdAt(rst.getObject("createdAt", LocalDateTime.class))
-      .build();
-    return rowMapper;
+  public List<Member> findAllByIdIn(List<Long> ids){
+
+    if(ids.isEmpty()) return List.of();
+
+    var sql = String.format("SELECT * FROM %s WHERE id in (:ids)",TABLE);
+    var params = new MapSqlParameterSource().addValue("ids" , ids);
+    return jdbcTemplate.query(sql,params,ROW_MAPPER);
   }
 
 

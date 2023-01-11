@@ -54,7 +54,6 @@ public class MemberWriteService {
     var history = MemberNicknameHistory.builder()
       .memberId(member.getId())
       .nickname(member.getNickname())
-      .createdAt(LocalDateTime.now())
       .build();
 
     memberNicknameHistoryRepository.save(history);
